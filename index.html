@@ -113,15 +113,15 @@
     </style>
 </head>
 <!-- 分页模板-->
-<script type="text/x-template" id="pagination-model">
+<script type="text/x-template" id="pagination-model">  
     <div class="tableBoder table-responsive">
-         <!-- 数据表格 -->
+        <!-- 数据表格 -->
         <div class="tableBox">
             <table class="table-bordered">
                 <thead>
                     <tr>
                         <th v-show="isShowCheckbox">
-                            <input type="checkbox" @click="_isSelected()" v-model="checked">
+                            <input type="checkbox">
                         </th>
                         <th v-for="item in tableHeadData" v-text="item"></th>
                     </tr>
@@ -129,18 +129,18 @@
                 <tbody>
                     <tr v-for="(object,index) in tableBodyData">
                         <td v-show="isShowCheckbox">
-                            <input type="checkbox" @click="_isExport(object)" v-model="object.checked">
+                            <input type="checkbox"  @click="isExport(object)" v-model="object.checked">
                         </td>
                         <td v-for="(value,key) in object">
                             <!-- <router-link to="/empinfo" v-if="key==addrouter" v-text="value"></router-link>
                             <template v-else>{{value}}</template> -->
-                            <router-link to="/empinfo"  v-text="value"></router-link>
+                            <router-link to="/empinfo" v-text="value"></router-link>
                         </td>
                     </tr>
                 </tbody>
             </table>
         </div>
-          <!-- 分页按钮 -->
+        <!-- 分页按钮 -->
         <div class="paginationBox" v-show="isShowPagination">
             <div class="selectList">
                 <span>每页显示</span>
@@ -154,26 +154,26 @@
             <div class="skipPageNum">
                 <span>
                     <i>跳转到第</i>
-                    <input type="text" v-model="pageNum" @keyup="_goPage(pageNum)">
+                    <input type="text" value="" ref="goToPage">
                     <i>页</i>
+                    <input type="button" value="确定" @click="goPage(event.target.value)">
                 </span>
             </div>
-                <ul class="pagination">
-                    <li>
-                        <a href="javascript:;" @click="_goPage(1)">首页</a>
-                    </li>
-                    <li :class="{active:item.isActive,disabled:item.isDisabled}" v-for="item in pages" @click="_goPage(item.pageNum)">
-                        <a href="javascript:;" v-text="item.pageNum"></a>
-                    </li>
-                    <li>
-                        <a href="javascript:;" @click="_goPage(buttonNum)">尾页</a>
-                    </li>
-                </ul>
-            </div>
+            <ul class="pagination">
+                <li>
+                    <a href="javascript:;" @click="goPage(1)">首页</a>
+                </li>
+                <li :class="{active:item.isActive,disabled:item.isDisabled}" v-for="item in pages" @click="goPage(item.buttonNum)">
+                    <a href="javascript:;" v-text="item.buttonNum"></a>
+                </li>
+                <li>
+                    <a href="javascript:;" @click="goPage( Math.ceil(tableBodyList.length / perPageDataNum))">尾页</a>
+                </li>
+            </ul>
         </div>
     </div>
 </script>
-<!-- 分页组件-->
+<!-- 分页组件 -->
 <script>
     Vue.component('pagination-model', {
         template: "#pagination-model",
@@ -200,12 +200,7 @@
         },
         data: function () {
             return {
-                currentPage: 1,                               //当前页
-                pageNum: 1,                                   //跳转到第几页
-                buttonNum: 0,                                 //切换显示数据量后的按钮总数
-                perPageDataNumber: [],                        //分页计算后一页显示的数据(使用于判断翻页时取消单选框状态与其余判断单选框状态)
-                checked: false,                               //数据表表头绑定一个状态
-                selectedData: [],                             //需导出的数据.
+                currentPage: 1,
             }
         },
         computed: {
@@ -216,9 +211,9 @@
             // 计算按钮个数
             pages: function () {
                 var buttons = [];
-                this.buttonNum = Math.ceil(this.tableBodyList.length / this.perPageDataNum);
+                var buttonNum = Math.ceil(this.tableBodyList.length / this.perPageDataNum);
                 var startPage = this.currentPage - 2 <= 0 ? 1 : this.currentPage - 2;
-                var endPage = this.currentPage + 2 <= this.buttonNum ? this.currentPage + 2 : this.buttonNum;
+                var endPage = this.currentPage + 2 <= buttonNum ? this.currentPage + 2 : buttonNum;
 
                 for (var i = startPage; i <= endPage; i++) {
                     var button = {};
@@ -233,7 +228,7 @@
                 if (this.currentPage - 2 > 1) {
                     button = this._createButtonState("...", false, true)
                     buttons.unshift(button)
-                    if (this.currentPage + 2 < this.buttonNum) {
+                    if (this.currentPage + 2 < buttonNum) {
                         button = this._createButtonState("...", false, true)
                         buttons.push(button)
                     }
@@ -242,85 +237,57 @@
             },
         },
         watch: {
-            //翻页时去除选中状态
-            currentPage: function () {
-                this.checked = false;
-                this._dataPagination(this.tableBodyList)
-                for (var i = 0; i < this.perPageDataNumber.length; i++) {
-                    this.perPageDataNumber[i].checked = false;
-                }
-            },
             //切换当前显示的数据量时当前页为1;
             perPageDataNum: function () {
                 if (this.currentPage > this.tableBodyList.length / this.perPageDataNum) {
                     this.currentPage = 1;
                 }
                 this._dataPagination(this.tableBodyList)
-
-                this._isSelected()
-            },
-            selectedData: function () {
-                this.$emit("selectedDatas", this.selectedData)
             },
         },
         methods: {
             /* 翻页 */
-            _goPage: function (val) {
+            goPage: function (val) {
+                var buttonNum = Math.ceil(this.tableBodyList.length / this.perPageDataNum);
                 if (val == "...") {
                     return;
                 }
-                if (val > this.buttonNum) {
-                    alert("只有" + this.buttonNum + "页数据")
-                    this.currentPage = 1;
+
+                if (val == "确定") {
+                    var inputValue = Number(this.$refs.goToPage.value)
+                    this.currentPage = inputValue;
+                    if (inputValue > buttonNum) {
+                        alert("只有" + buttonNum + "页数据")
+                        this.currentPage = 1;
+                    }
                 } else {
-                    this.currentPage = Number(val);
+                    this.currentPage = val;
                 }
+            },
+            /* 选择数据导出:*/
+            isExport: function (companyItem) {
+                var selectedData = []
+                if (true == companyItem.checked) {
+                    this._filterData(companyItem.group_id, selectedData)
+                } else {
+                    this._filterData(companyItem.group_id, selectedData)
+                }
+                this.$emit("selectedDatas", selectedData)
             },
             //数据分页方法
             _dataPagination: function (resPaginationArr) {
                 var pageStar = (this.currentPage - 1) * this.perPageDataNum;
                 var pageEnd = this.perPageDataNum * this.currentPage;
-                this.perPageDataNumber = resPaginationArr.slice(pageStar, pageEnd);
+                var perPageDataNumber = resPaginationArr.slice(pageStar, pageEnd);
                 this.tableBodyList.length = resPaginationArr.length;
-                return this.perPageDataNumber;
+                return perPageDataNumber;
             },
             //创建分页按钮状态
             _createButtonState: function (num, isactive, isDisabled) {
                 return {
-                    pageNum: num,
+                    buttonNum: num,
                     isActive: isactive,
                     isDisabled: isDisabled,
-                }
-            },
-            /* 选择单条数据:*/
-            _isExport: function (companyItem) {
-                if (true == companyItem.checked) {
-                    this._filterData(companyItem.group_id, this.selectedData)
-                } else {
-                    this.checked = false;
-                    this._filterData(companyItem.group_id, this.selectedData)
-                }
-            },
-            /* 单选框状态方法:*/
-            _isSelected: function () {
-
-                if (true == this.checked) {
-                    // 清空之前的选中状态
-                    for (var i = 0; i < this.perPageDataNumber.length; i++) {
-                        this.perPageDataNumber[i].checked = false;
-                    }
-                    this.selectedData = [];
-                    /* 全选 */
-                    for (var i = 0; i < this.perPageDataNumber.length; i++) {
-                        this.perPageDataNumber[i].checked = true;
-                        this.selectedData.push(this.perPageDataNumber[i].group_id);
-                    }
-                    /* 反选 */
-                } else {
-                    for (var i = 0; i < this.perPageDataNumber.length; i++) {
-                        this.perPageDataNumber[i].checked = false;
-                    }
-                    this.selectedData = [];
                 }
             },
             /* 数组过滤方法 参数: filterStr:过滤字段:filterArr:需过滤数组*/
