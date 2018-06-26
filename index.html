@@ -1,118 +1,566 @@
-<style>
-    #app {
-        margin-left: 160px;
-        font-size: 14px;
-    }
+<!DOCTYPE html>
+<html lang="en">
 
-    #app a {
-        text-decoration: none;
-    }
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+    <script src="./lib/jquery-1.11.3.min.js"></script>
+    <link rel="stylesheet" href="./lib/bootstrap.min.css">
+    <script src="./lib/bootstrap.min.js"></script>
+    <script src="./lib/vue.min.js"></script>
+    <script src="./lib/vue-router.min.js"></script>
+    <script src="./lib/axios.js"></script>
+    <style>
+        #app {
+            margin-left: 160px;
+            font-size: 14px;
+        }
 
-    .search,
-    .tableBoder {
-        margin: 20px auto;
-        padding: 20px;
-        padding-left: 2%;
-        padding-right: 2%;
-        width: 98%;
-        border: 1px solid #ddd;
-        border-radius: 10px;
-        box-shadow: 2px 2px 5px #ccc;
-        background: #f9f9f9;
-    }
+        #app a {
+            text-decoration: none;
+        }
 
-    .tableBoder .export {
-        margin-bottom: 20px;
-    }
+        .search,
+        .tableBoder {
+            margin: 20px auto;
+            padding: 20px;
+            padding-left: 2%;
+            padding-right: 2%;
+            width: 98%;
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            box-shadow: 2px 2px 5px #ccc;
+            background: #f9f9f9;
+        }
 
-    .tableBox {
-        overflow-x: auto;
-        border: 1px solid #ccc;
-    }
+        .tableBoder .export {
+            margin-bottom: 20px;
+        }
 
-    .tableBox table {
-        width: 200%;
-    }
+        .tableBox {
+            overflow-x: auto;
+            border: 1px solid #ccc;
+        }
 
-    .tableBox table tbody tr:hover {
-        background-color: #eee;
-    }
+        .tableBox table {
+            width: 200%;
+        }
 
-    .tableBoder table th,
-    .tableBoder table td {
-        text-align: center;
-        width: 150px;
-        height: 50px;
-    }
+        .tableBox table tbody tr:hover {
+            background-color: #eee;
+        }
 
-    .tableBoder table thead:first-child {
-        background-color: #5296c7;
-        color: white;
-    }
+        .tableBoder table th,
+        .tableBoder table td {
+            text-align: center;
+            width: 150px;
+            height: 50px;
+        }
 
-    /* 极客+ 员工信息开始 */
+        .tableBoder table thead:first-child {
+            background-color: #5296c7;
+            color: white;
+        }
 
-    .tableBoder .tableWidth {
-        width: 100%;
-    }
+        /* 极客+ 员工信息开始 */
 
-    .tableWidth th,
-    .tableWidth td {
-        text-align: center;
-        width: 100px;
-        height: 50px;
-    }
+        .tableBoder .tableWidth {
+            width: 100%;
+        }
 
-    /* 极客+ 员工信息结束*/
+        .tableWidth th,
+        .tableWidth td {
+            text-align: center;
+            width: 100px;
+            height: 50px;
+        }
 
-    .paginationBox {
-        margin-top: 15px;
-        padding-left: 2%;
-    }
+        /* 极客+ 员工信息结束*/
 
-    .paginationBox .selectList {
-        width: 260px;
-        display: inline-block;
-        vertical-align: top;
-        margin-top: 20px;
-    }
+        .paginationBox {
+            margin-top: 15px;
+            padding-left: 2%;
+        }
 
-    .paginationBox .pagination {
-        width: 500px;
-        margin: 15px 0 0 10px;
-    }
+        .paginationBox .selectList {
+            width: 260px;
+            display: inline-block;
+            vertical-align: top;
+            margin-top: 20px;
+        }
 
-    i {
-        font-style: normal;
-    }
+        .paginationBox .pagination {
+            width: 500px;
+            margin: 15px 0 0 10px;
+        }
 
-    .skipPageNum {
-        display: inline-block;
-        vertical-align: top;
-        margin-top: 20px;
-    }
+        i {
+            font-style: normal;
+        }
 
-    .skipPageNum input {
-        width: 30px;
-        text-align: center;
-    }
-</style>
-</style>
-<script src="__PUBLIC__/js/vue.min.js"></script>
-<script src="__PUBLIC__/js/vue-router.min.js"></script>
-<script src="__PUBLIC__/js/axios.min.js"></script>
+        .skipPageNum {
+            display: inline-block;
+            vertical-align: top;
+            margin-top: 20px;
+        }
 
-<div id="app">
-    <div>
-        <keep-alive>
-            <router-view></router-view>
-        </keep-alive>
+        .skipPageNum input {
+            width: 30px;
+            text-align: center;
+        }
+    </style>
+</head>
+<!-- 分页模板-->
+<script type="text/x-template" id="pagination-model">
+    <div class="tableBoder table-responsive">
+         <!-- 数据表格 -->
+        <div class="tableBox">
+            <table class="table-bordered">
+                <thead>
+                    <tr>
+                        <th v-show="isShowCheckbox">
+                            <input type="checkbox" @click="_isSelected()" v-model="checked">
+                        </th>
+                        <th v-for="item in tableHeadData" v-text="item"></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr v-for="(object,index) in tableBodyData">
+                        <td v-show="isShowCheckbox">
+                            <input type="checkbox" @click="_isExport(object)" v-model="object.checked">
+                        </td>
+                        <td v-for="(value,key) in object">
+                            <!-- <router-link to="/empinfo" v-if="key==addrouter" v-text="value"></router-link>
+                            <template v-else>{{value}}</template> -->
+                            <router-link to="/empinfo"  v-text="value"></router-link>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+          <!-- 分页按钮 -->
+        <div class="paginationBox" v-show="isShowPagination">
+            <div class="selectList">
+                <span>每页显示</span>
+                <select name="" id="" v-model="perPageDataNum">
+                    <option :value="item" v-for="item in selectShowDataAmount" v-text="item"></option>
+                </select>
+                <span>条数据,共</span>
+                <span v-text="tableBodyList.length"></span>
+                <span>条</span>
+            </div>
+            <div class="skipPageNum">
+                <span>
+                    <i>跳转到第</i>
+                    <input type="text" v-model="pageNum" @keyup="_goPage(pageNum)">
+                    <i>页</i>
+                </span>
+            </div>
+                <ul class="pagination">
+                    <li>
+                        <a href="javascript:;" @click="_goPage(1)">首页</a>
+                    </li>
+                    <li :class="{active:item.isActive,disabled:item.isDisabled}" v-for="item in pages" @click="_goPage(item.pageNum)">
+                        <a href="javascript:;" v-text="item.pageNum"></a>
+                    </li>
+                    <li>
+                        <a href="javascript:;" @click="_goPage(buttonNum)">尾页</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
     </div>
-</div>
-<include file="geekPlusCompanyPage" />
-<include file="geekPlusEmpPage" />
-<include file="paginationComponent" />
+</script>
+<!-- 分页组件-->
 <script>
+    Vue.component('pagination-model', {
+        template: "#pagination-model",
+        props: {
+            tableHeadData: [Array, Object],
+            tableBodyList: {
+                type: [Array, Object],
+                default: []
+            },
+            isShowCheckbox: {
+                type: Boolean,
+                default: false
+            },
+            isShowPagination: {
+                type: Boolean,
+                default: true
+            },
+            selectShowDataAmount: Array,
+            addrouter: {
+                type: String,
+                default: "company_name"
+            },
+            perPageDataNum: Number
+        },
+        data: function () {
+            return {
+                currentPage: 1,                               //当前页
+                pageNum: 1,                                   //跳转到第几页
+                buttonNum: 0,                                 //切换显示数据量后的按钮总数
+                perPageDataNumber: [],                        //分页计算后一页显示的数据(使用于判断翻页时取消单选框状态与其余判断单选框状态)
+                checked: false,                               //数据表表头绑定一个状态
+                selectedData: [],                             //需导出的数据.
+            }
+        },
+        computed: {
+            //数据分页
+            tableBodyData: function () {
+                return this._dataPagination(this.tableBodyList)
+            },
+            // 计算按钮个数
+            pages: function () {
+                var buttons = [];
+                this.buttonNum = Math.ceil(this.tableBodyList.length / this.perPageDataNum);
+                var startPage = this.currentPage - 2 <= 0 ? 1 : this.currentPage - 2;
+                var endPage = this.currentPage + 2 <= this.buttonNum ? this.currentPage + 2 : this.buttonNum;
+
+                for (var i = startPage; i <= endPage; i++) {
+                    var button = {};
+                    if (i == this.currentPage) {
+                        button = this._createButtonState(i, true, false)
+                    } else {
+                        button = this._createButtonState(i, false, false)
+                    }
+                    buttons.push(button)
+                }
+
+                if (this.currentPage - 2 > 1) {
+                    button = this._createButtonState("...", false, true)
+                    buttons.unshift(button)
+                    if (this.currentPage + 2 < this.buttonNum) {
+                        button = this._createButtonState("...", false, true)
+                        buttons.push(button)
+                    }
+                }
+                return buttons;
+            },
+        },
+        watch: {
+            //翻页时去除选中状态
+            currentPage: function () {
+                this.checked = false;
+                this._dataPagination(this.tableBodyList)
+                for (var i = 0; i < this.perPageDataNumber.length; i++) {
+                    this.perPageDataNumber[i].checked = false;
+                }
+            },
+            //切换当前显示的数据量时当前页为1;
+            perPageDataNum: function () {
+                if (this.currentPage > this.tableBodyList.length / this.perPageDataNum) {
+                    this.currentPage = 1;
+                }
+                this._dataPagination(this.tableBodyList)
+
+                this._isSelected()
+            },
+            selectedData: function () {
+                this.$emit("selectedDatas", this.selectedData)
+            },
+        },
+        methods: {
+            /* 翻页 */
+            _goPage: function (val) {
+                if (val == "...") {
+                    return;
+                }
+                if (val > this.buttonNum) {
+                    alert("只有" + this.buttonNum + "页数据")
+                    this.currentPage = 1;
+                } else {
+                    this.currentPage = Number(val);
+                }
+            },
+            //数据分页方法
+            _dataPagination: function (resPaginationArr) {
+                var pageStar = (this.currentPage - 1) * this.perPageDataNum;
+                var pageEnd = this.perPageDataNum * this.currentPage;
+                this.perPageDataNumber = resPaginationArr.slice(pageStar, pageEnd);
+                this.tableBodyList.length = resPaginationArr.length;
+                return this.perPageDataNumber;
+            },
+            //创建分页按钮状态
+            _createButtonState: function (num, isactive, isDisabled) {
+                return {
+                    pageNum: num,
+                    isActive: isactive,
+                    isDisabled: isDisabled,
+                }
+            },
+            /* 选择单条数据:*/
+            _isExport: function (companyItem) {
+                if (true == companyItem.checked) {
+                    this._filterData(companyItem.group_id, this.selectedData)
+                } else {
+                    this.checked = false;
+                    this._filterData(companyItem.group_id, this.selectedData)
+                }
+            },
+            /* 单选框状态方法:*/
+            _isSelected: function () {
+
+                if (true == this.checked) {
+                    // 清空之前的选中状态
+                    for (var i = 0; i < this.perPageDataNumber.length; i++) {
+                        this.perPageDataNumber[i].checked = false;
+                    }
+                    this.selectedData = [];
+                    /* 全选 */
+                    for (var i = 0; i < this.perPageDataNumber.length; i++) {
+                        this.perPageDataNumber[i].checked = true;
+                        this.selectedData.push(this.perPageDataNumber[i].group_id);
+                    }
+                    /* 反选 */
+                } else {
+                    for (var i = 0; i < this.perPageDataNumber.length; i++) {
+                        this.perPageDataNumber[i].checked = false;
+                    }
+                    this.selectedData = [];
+                }
+            },
+            /* 数组过滤方法 参数: filterStr:过滤字段:filterArr:需过滤数组*/
+            _filterData: function (filterStr, filterArr) {
+                if (filterArr.indexOf(filterStr, 0) == -1) {
+                    filterArr.push(filterStr);
+                } else {
+                    for (var i = 0; i < filterArr.length; i++) {
+                        if (filterStr == filterArr[i]) {
+                            filterArr.splice(i, 1);
+                        }
+                    }
+                }
+            }
+        }
+    })
+</script>
+<!-- 公司模板 -->
+<script type="text/x-template" id="geekPlusCompany-model">
+    <div>
+        <div class="search" v-if="isShowCheckbox">
+            <span>企业名称:</span>
+            <input type="text" v-model="searchVal">
+            <button type="button" class="btn btn-primary btn-xs">查询</button>
+            <div class="export" style="margin-top:15px;">
+                <button type="button" class="btn btn-primary btn-sm" @click="_exportGeekCompanyData()">导出</button>
+            </div>
+        </div>
+        
+        <pagination-model :tableHeadData="tableHeadData" :tableBodyList="dataLists"  :isShowCheckbox="isShowCheckbox" :isShowPagination="showPagination" :searchVal="searchVal" :exportUrl="exportUrl" :selectShowDataAmount="selectShowDataAmount" :perPageDataNum="1"  :addrouter="addrouter" :btnColor="btnColor" @selectedDatas="selectedDatas"></pagination-model>
+    </div>
+</script>
+<!-- 公司列表组件 -->
+<script>
+    var companyList = {
+        template: "#geekPlusCompany-model",
+        data: function () {
+            return {
+                dataList: [
+                    { name: 111 },
+                    { name: 22 },
+                    { name: 222 }
+                ],                                   //源数据
+                isShowCheckbox: true,                           //是否显示单选框功能
+                isShowPagination: true,                         //是否显示分页按钮
+                btnColor: true,                                 //按钮颜色是否改变    
+                searchVal: "",                                  //搜索值
+                selectShowDataAmount: [1, 5, 10, 20, 30, 50],    //改变此值 选择一页要显示的数据条数,
+                addrouter: "company_name",                      //改变此值 为不同的字段添加路由
+                selectedData: [],
+                exportUrl: "__CONTROLLER__/exportGeekPlusData/geek_type/1/group_id_list/",
+                tableHeadData: ["企业名称", "方案ID", "企业支付总金额", "方案员工总人数", "方案员工平均年龄", "方案员工男/女人数", "登录员工总人数", "登录员工/方案员工总人数", "登录员工平均年龄", "登录员工男/女人数", "确认方案员工总人数", "确认方案员工/登录员工总人数", "确认方案员工/方案员工总人数", "确认方案员工平均年龄", "确认方案员工男/女人数", "确认方案员工中家庭状况(未婚人数，占比)/(已婚无孩子人数，占比)/(已婚有孩子人数，占比)/(未填写人数，占比)", "确认方案员工中年收入状况(10万以下人数，占比)/(10-30万人数，占比)/(30-50万人数，占比)/(50万以上人数，占比）/(未填写人数，占比", "员工自付费用总金额", "员工自付费用总金额/企业支付总金额", "自付费的员工总人数", "自付费的员工总人数/方案员工总人数", "自付费员工的平均消费金额", "自付费员工平均年龄", "自付费员工男/女人数", "员工为本人自付费用总金额", "为本人自付费的员工总人数", "员工为连带自付费用总金额", "为连带自付费的员工总人数", "员工为连带自付费(为子女自付人数，占比)/(为配偶自付人数)/(为父母自付人数)"]
+            }
+        },
+        mounted: function () {
+            // this.$nextTick(function () {
+            //     var companyDataStorage = JSON.stringify(companyDataStorage);
+            //     this._requireGeekComData(companyDataStorage)
+            // })
+        },
+        computed: {
+            /* 当数据为空时,不显示分页 */
+            showPagination: function () {
+                if (this.dataList.length == 0) {
+                    this.isShowPagination = false;
+                }
+                else {
+                    this.isShowPagination = true;
+                }
+                return this.isShowPagination;
+            },
+            dataLists: function () {
+                var filterArr = [];
+                if (this.searchVal == "") {
+                    return this.dataList;
+                } else {
+                    for (var i = 0; i < this.dataList.length; i++) {
+                        var condition1 = this.dataList[i].company_name.indexOf(this.searchVal, 0) != -1;
+                        var condition2 = this.dataList[i].eid == this.searchVal;
+                        if (condition1 || condition2) {
+                            filterArr.push(this.dataList[i]);
+                        }
+                    }
+                    return filterArr;
+                }
+            }
+        },
+        methods: {
+            /* 拉取数据 */
+            _requireGeekComData: function () {
+                var requireData = localStorage.getItem("localstorageDataKey");
+                // 缓存中有数据
+                if (requireData) {
+                    // 缓存中的数据是否过期
+                    if (this._isLocalStorageOverTime(requireData)) {
+                        localStorage.removeItem("localstorageDataKey");
+                        this._requireRemoteData(url, paramsData)
+                    } else {
+                        // 使用缓存中的数据
+                        this._requireLocalData(requireData)
+                    }
+                } else {
+                    //缓存中没有数据
+                    var url = "http://localhost/opr/Pk/GeekOperating/ajaxLimitPageData";
+                    var paramsData = { geek_type: 1, page_num: 20, current_page_num: 1 };
+                    this._requireRemoteData(url, paramsData)
+                }
+            },
+            /* 从服务器请求数据 */
+            _requireRemoteData: function (url, paramsData) {
+                var _this = this;
+                axios.get(url,
+                    { params: paramsData }).then(function (res) {
+                        _this.dataList = res.data;
+                        _this._localStorageData()
+                    })
+            },
+            /* 获取缓存数据是否到期 */
+            _isLocalStorageOverTime: function (requireData) {
+                var startTime = JSON.parse(requireData)[JSON.parse(requireData).length - 1];//获取数据存储时的时间
+                var currentTime = new Date().getTime();     //当前时间(毫秒)
+                var storageTime = 24 * 3600 * 1000;         //数据更新期限24小时
+                if (currentTime - startTime > storageTime) {
+                    return true;
+                } else {
+                    return false;
+                }
+            },
+            /* 存储数据到本地 */
+            _localStorageData: function () {
+
+                var time = new Date().getTime();
+                this.dataList.push(time);
+
+                localStorage.setItem("localstorageDataKey", JSON.stringify(this.dataList));
+            },
+            /* 从缓存中获取数据 */
+            _requireLocalData: function (requireData) {
+
+                var storageCompanyList = JSON.parse(requireData);
+                storageCompanyList.pop();
+                this.dataList = storageCompanyList;
+            },
+            selectedDatas: function (res) {
+                this.selectedData = res;
+            },
+            /* 导出数据表 */
+            _exportGeekCompanyData: function () {
+                location.href = this.exportUrl + JSON.stringify(this.selectedData);
+            }
+        }
+    }
+</script>
+
+<!-- 员工列表模板 -->
+<script type="text/x-template" id="geekPlusEmp-model">
+    <div>
+        <div class="search">
+            <span style="font-size:24px;">极客+方案自付费员工数据信息</span>
+            <div class="export" style="margin-top:15px;">
+            <button type="button" class="btn btn-primary btn-sm" @click="_exportGeekEmpData()">导出</button>
+            </div>
+         </div>
+        <pagination-model :tableHeadData="tableHeadData" :tableBodyList="dataLists" :isShowCheckbox="isShowCheckbox"   :isShowPagination="showPagination" :searchVal="searchVal" :exportUrl="exportUrl" :selectShowDataAmount="selectShowDataAmount"     :perPageDataNum="1" :addrouter="addrouter" :btnColor="btnColor"></pagination-model>
+    </div>
+</script>
+<!-- 员工列表组件 -->
+<script>
+    var empList = {
+        template: "#geekPlusEmp-model",
+        data: function () {
+            return {
+                dataLists: [
+                    { name: 111 },
+                    { name: 22 },
+                    { name: 222 }
+                ],                                  //源数据
+                isShowCheckbox: false,                          //是否有单选框功能
+                isShowPagination: false,                        //是否显示分页按钮
+                btnColor: false,                                //按钮颜色是否改变    
+                searchVal: "",
+                selectShowDataAmount: [1, 5, 10, 20, 30],       //改变此值 选择一页要显示的数据条数
+                addrouter: "company_name",                      //改变此值 为不同的字段添加路由
+                exportUrl: "__CONTROLLER__/exportGeekPlusData/geek_type/2",
+                tableHeadData: ["员工姓名", "证件号码", "企业为其支付费用", "自付费总金额", "为本人自付费金额", "为子女自付费金额", "为配偶自付费金额", "为父母自付费金额"]
+            }
+        },
+        mounted: function () {
+            // this.$nextTick(function () {
+            //     var url = "__PUBLIC__/resource/emp_info.json";
+            //     this._requireData(url);
+            // })
+        },
+        computed: {
+            showPagination: function () {
+                if (this.dataLists.length == 0) {
+                    this.isShowPagination = false;
+                } else {
+                    this.isShowPagination = true;
+                }
+                return this.isShowPagination;
+            }
+        },
+        methods: {
+            // _requireData: function (url) {
+            //     var _this = this;
+            //     axios.get(url).then(function (res) {
+            //         var requireData = res.data;
+            //         var dataLists = requireData.emp_data_list;
+            //         _this.companyName = requireData.company_name;
+            //         var newDataList = [];
+            //         for (var key in dataLists) {
+            //             newDataList.push(dataLists[key]);
+            //         }
+            //         _this.dataLists = newDataList;
+            //     })
+            // },
+            /* 导出数据表 */
+            _exportGeekEmpData: function () {
+                location.href = this.exportUrl;
+            }
+        }
+    }
+</script>
+
+<body>
+    <div id="app">
+        <div>
+            <keep-alive>
+                <router-view></router-view>
+            </keep-alive>
+        </div>
+    </div>
+</body>
+<script>
+
+    // <include file="geekPlusCompanyPage" />
+    // <include file="geekPlusEmpPage" />
+    // <include file="paginationComponent" />
+
     var router = new VueRouter({
         routes: [
             {
@@ -132,3 +580,5 @@
     })
 
 </script>
+
+</html>
