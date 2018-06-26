@@ -121,7 +121,7 @@
                 <thead>
                     <tr>
                         <th v-show="isShowCheckbox">
-                            <input type="checkbox">
+                            <input type="checkbox" value="" @click=allSelected(event.target.checked)>
                         </th>
                         <th v-for="item in tableHeadData" v-text="item"></th>
                     </tr>
@@ -129,7 +129,7 @@
                 <tbody>
                     <tr v-for="(object,index) in tableBodyData">
                         <td v-show="isShowCheckbox">
-                            <input type="checkbox"  @click="isExport(object)" v-model="object.checked">
+                            <input type="checkbox" class="selectedBox" v-model="object.checked"  @click="singleSelected(object)">
                         </td>
                         <td v-for="(value,key) in object">
                             <!-- <router-link to="/empinfo" v-if="key==addrouter" v-text="value"></router-link>
@@ -242,7 +242,6 @@
                 if (this.currentPage > this.tableBodyList.length / this.perPageDataNum) {
                     this.currentPage = 1;
                 }
-                this._dataPagination(this.tableBodyList)
             },
         },
         methods: {
@@ -252,7 +251,6 @@
                 if (val == "...") {
                     return;
                 }
-
                 if (val == "确定") {
                     var inputValue = Number(this.$refs.goToPage.value)
                     this.currentPage = inputValue;
@@ -265,7 +263,7 @@
                 }
             },
             /* 选择数据导出:*/
-            isExport: function (companyItem) {
+            singleSelected: function (companyItem) {
                 var selectedData = []
                 if (true == companyItem.checked) {
                     this._filterData(companyItem.group_id, selectedData)
@@ -273,6 +271,17 @@
                     this._filterData(companyItem.group_id, selectedData)
                 }
                 this.$emit("selectedDatas", selectedData)
+            },
+            allSelected: function (ev) {
+                var input = document.getElementsByClassName("selectedBox");
+                for (var i = 0; i < input.length; i++) {
+                    if (ev) {
+                        input[i].checked = true;
+
+                    } else {
+                        input[i].checked = false;
+                    }
+                }
             },
             //数据分页方法
             _dataPagination: function (resPaginationArr) {
