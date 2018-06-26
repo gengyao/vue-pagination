@@ -1,0 +1,66 @@
+<script type="text/x-template" id="geekPlusEmp-model">
+    <div>
+        <div class="search">
+            <span style="font-size:24px;">极客+方案自付费员工数据信息</span>
+            <div class="export" style="margin-top:15px;">
+            <button type="button" class="btn btn-primary btn-sm" @click="_exportGeekEmpData()">导出</button>
+            </div>
+         </div>
+        <pagination-model :tableHeadData="tableHeadData" :tableBodyList="dataLists" :isShowCheckbox="isShowCheckbox"   :isShowPagination="showPagination" :searchVal="searchVal" :exportUrl="exportUrl" :selectShowDataAmount="selectShowDataAmount"     :perPageDataNum="1" :addrouter="addrouter" :btnColor="btnColor"></pagination-model>
+    </div>
+</script>
+
+<script>
+    //员工列表组件
+    var empList = {
+        template: "#geekPlusEmp-model",
+        data: function () {
+            return {
+                dataLists: [],                                  //源数据
+                isShowCheckbox: false,                          //是否有单选框功能
+                isShowPagination: false,                        //是否显示分页按钮
+                btnColor: false,                                //按钮颜色是否改变    
+                searchVal: "",
+                selectShowDataAmount: [1, 5, 10, 20, 30],       //改变此值 选择一页要显示的数据条数
+                addrouter: "company_name",                      //改变此值 为不同的字段添加路由
+                exportUrl: "__CONTROLLER__/exportGeekPlusData/geek_type/2",
+                tableHeadData: ["员工姓名", "证件号码", "企业为其支付费用", "自付费总金额", "为本人自付费金额", "为子女自付费金额", "为配偶自付费金额", "为父母自付费金额"]
+            }
+        },
+        mounted: function () {
+            this.$nextTick(function () {
+                var url = "__PUBLIC__/resource/emp_info.json";
+                this._requireData(url);
+            })
+        },
+        computed: {
+            showPagination: function () {
+                if (this.dataLists.length == 0) {
+                    this.isShowPagination = false;
+                } else {
+                    this.isShowPagination = true;
+                }
+                return this.isShowPagination;
+            }
+        },
+        methods: {
+            _requireData: function (url) {
+                var _this = this;
+                axios.get(url).then(function (res) {
+                    var requireData = res.data;
+                    var dataLists = requireData.emp_data_list;
+                    _this.companyName = requireData.company_name;
+                    var newDataList = [];
+                    for (var key in dataLists) {
+                        newDataList.push(dataLists[key]);
+                    }
+                    _this.dataLists = newDataList;
+                })
+            },
+            /* 导出数据表 */
+            _exportGeekEmpData: function () {
+                location.href = this.exportUrl;
+            }
+        }
+    }
+</script>

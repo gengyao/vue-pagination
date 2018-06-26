@@ -1,0 +1,132 @@
+<script type="text/x-template" id="geekPlusCompany-model">
+    <div>
+        <div class="search" v-if="isShowCheckbox">
+            <span>企业名称:</span>
+            <input type="text" v-model="searchVal">
+            <button type="button" class="btn btn-primary btn-xs">查询</button>
+            <div class="export" style="margin-top:15px;">
+                <button type="button" class="btn btn-primary btn-sm" @click="_exportGeekCompanyData()">导出</button>
+            </div>
+        </div>
+        
+        <pagination-model :tableHeadData="tableHeadData" :tableBodyList="dataLists"  :isShowCheckbox="isShowCheckbox" :isShowPagination="showPagination" :searchVal="searchVal" :exportUrl="exportUrl" :selectShowDataAmount="selectShowDataAmount" :perPageDataNum="1"  :addrouter="addrouter" :btnColor="btnColor" @selectedDatas="selectedDatas"></pagination-model>
+    </div>
+</script>
+
+<script>
+    //公司列表组件
+    var companyList = {
+        template: "#geekPlusCompany-model",
+        data: function () {
+            return {
+                dataList: [],                                   //源数据
+                isShowCheckbox: true,                           //是否显示单选框功能
+                isShowPagination: true,                         //是否显示分页按钮
+                btnColor: true,                                 //按钮颜色是否改变    
+                searchVal: "",                                  //搜索值
+                selectShowDataAmount: [1, 5, 10, 20, 30, 50],    //改变此值 选择一页要显示的数据条数,
+                addrouter: "company_name",                      //改变此值 为不同的字段添加路由
+                selectedData:[],
+                exportUrl: "__CONTROLLER__/exportGeekPlusData/geek_type/1/group_id_list/",
+                tableHeadData: ["企业名称", "方案ID", "企业支付总金额", "方案员工总人数", "方案员工平均年龄", "方案员工男/女人数", "登录员工总人数", "登录员工/方案员工总人数", "登录员工平均年龄", "登录员工男/女人数", "确认方案员工总人数", "确认方案员工/登录员工总人数", "确认方案员工/方案员工总人数", "确认方案员工平均年龄", "确认方案员工男/女人数", "确认方案员工中家庭状况(未婚人数，占比)/(已婚无孩子人数，占比)/(已婚有孩子人数，占比)/(未填写人数，占比)", "确认方案员工中年收入状况(10万以下人数，占比)/(10-30万人数，占比)/(30-50万人数，占比)/(50万以上人数，占比）/(未填写人数，占比", "员工自付费用总金额", "员工自付费用总金额/企业支付总金额", "自付费的员工总人数", "自付费的员工总人数/方案员工总人数", "自付费员工的平均消费金额", "自付费员工平均年龄", "自付费员工男/女人数", "员工为本人自付费用总金额", "为本人自付费的员工总人数", "员工为连带自付费用总金额", "为连带自付费的员工总人数", "员工为连带自付费(为子女自付人数，占比)/(为配偶自付人数)/(为父母自付人数)"]
+            }
+        },
+        mounted: function () {
+            this.$nextTick(function () {
+                var companyDataStorage = JSON.stringify(companyDataStorage);
+                this._requireGeekComData(companyDataStorage)
+            })
+        },
+        computed: {
+            /* 当数据为空时,不显示分页 */
+            showPagination: function () {
+                if (this.dataList.length == 0) {
+                    this.isShowPagination = false;
+                }
+                else {
+                    this.isShowPagination = true;
+                }
+                return this.isShowPagination;
+            },
+            dataLists: function () {
+                var filterArr=[];
+                if(this.searchVal==""){
+                    return this.dataList;
+                }else{
+                    for (var i = 0; i < this.dataList.length; i++) {
+                        var condition1 = this.dataList[i].company_name.indexOf(this.searchVal, 0) != -1;
+                        var condition2 = this.dataList[i].eid == this.searchVal;
+                        if (condition1 || condition2) {
+                            filterArr.push(this.dataList[i]);
+                        }
+                    }
+                    return filterArr;
+                }
+            }
+        },
+        methods: {
+            /* 拉取数据 */
+            _requireGeekComData: function () {
+                var requireData = localStorage.getItem("localstorageDataKey");
+                // 缓存中有数据
+                if (requireData) {
+                    // 缓存中的数据是否过期
+                    if (this._isLocalStorageOverTime(requireData)) {
+                        localStorage.removeItem("localstorageDataKey");
+                        this._requireRemoteData(url, paramsData)
+                    } else {
+                        // 使用缓存中的数据
+                        this._requireLocalData(requireData)
+                    }
+                } else {
+                    //缓存中没有数据
+                    var url = "http://localhost/opr/Pk/GeekOperating/ajaxLimitPageData";
+                    var paramsData = { geek_type: 1, page_num: 20, current_page_num: 1 };
+                    this._requireRemoteData(url, paramsData)
+                }
+            },
+            /* 从服务器请求数据 */
+            _requireRemoteData: function (url, paramsData) {
+                var _this = this;
+                axios.get(url,
+                    { params: paramsData }).then(function (res) {
+                        _this.dataList = res.data;
+                        _this._localStorageData()
+                    })
+            },
+            /* 获取缓存数据是否到期 */
+            _isLocalStorageOverTime: function (requireData) {
+                var startTime = JSON.parse(requireData)[JSON.parse(requireData).length - 1];//获取数据存储时的时间
+                var currentTime = new Date().getTime();     //当前时间(毫秒)
+                var storageTime = 24 * 3600 * 1000;         //数据更新期限24小时
+                if (currentTime - startTime > storageTime) {
+                    return true;
+                } else {
+                    return false;
+                }
+            },
+            /* 存储数据到本地 */
+            _localStorageData: function () {
+
+                var time = new Date().getTime();
+                this.dataList.push(time);
+
+                localStorage.setItem("localstorageDataKey", JSON.stringify(this.dataList));
+            },
+            /* 从缓存中获取数据 */
+            _requireLocalData: function (requireData) {
+
+                var storageCompanyList = JSON.parse(requireData);
+                storageCompanyList.pop();
+                this.dataList = storageCompanyList;
+            },
+            selectedDatas:function(res){
+                this.selectedData=res;
+            },
+            /* 导出数据表 */
+            _exportGeekCompanyData: function () {
+                location.href = this.exportUrl + JSON.stringify(this.selectedData);
+            }
+        }
+    }
+</script>

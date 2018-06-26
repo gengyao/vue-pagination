@@ -1,0 +1,134 @@
+<style>
+    #app {
+        margin-left: 160px;
+        font-size: 14px;
+    }
+
+    #app a {
+        text-decoration: none;
+    }
+
+    .search,
+    .tableBoder {
+        margin: 20px auto;
+        padding: 20px;
+        padding-left: 2%;
+        padding-right: 2%;
+        width: 98%;
+        border: 1px solid #ddd;
+        border-radius: 10px;
+        box-shadow: 2px 2px 5px #ccc;
+        background: #f9f9f9;
+    }
+
+    .tableBoder .export {
+        margin-bottom: 20px;
+    }
+
+    .tableBox {
+        overflow-x: auto;
+        border: 1px solid #ccc;
+    }
+
+    .tableBox table {
+        width: 200%;
+    }
+
+    .tableBox table tbody tr:hover {
+        background-color: #eee;
+    }
+
+    .tableBoder table th,
+    .tableBoder table td {
+        text-align: center;
+        width: 150px;
+        height: 50px;
+    }
+
+    .tableBoder table thead:first-child {
+        background-color: #5296c7;
+        color: white;
+    }
+
+    /* 极客+ 员工信息开始 */
+
+    .tableBoder .tableWidth {
+        width: 100%;
+    }
+
+    .tableWidth th,
+    .tableWidth td {
+        text-align: center;
+        width: 100px;
+        height: 50px;
+    }
+
+    /* 极客+ 员工信息结束*/
+
+    .paginationBox {
+        margin-top: 15px;
+        padding-left: 2%;
+    }
+
+    .paginationBox .selectList {
+        width: 260px;
+        display: inline-block;
+        vertical-align: top;
+        margin-top: 20px;
+    }
+
+    .paginationBox .pagination {
+        width: 500px;
+        margin: 15px 0 0 10px;
+    }
+
+    i {
+        font-style: normal;
+    }
+
+    .skipPageNum {
+        display: inline-block;
+        vertical-align: top;
+        margin-top: 20px;
+    }
+
+    .skipPageNum input {
+        width: 30px;
+        text-align: center;
+    }
+</style>
+</style>
+<script src="__PUBLIC__/js/vue.min.js"></script>
+<script src="__PUBLIC__/js/vue-router.min.js"></script>
+<script src="__PUBLIC__/js/axios.min.js"></script>
+
+<div id="app">
+    <div>
+        <keep-alive>
+            <router-view></router-view>
+        </keep-alive>
+    </div>
+</div>
+<include file="geekPlusCompanyPage" />
+<include file="geekPlusEmpPage" />
+<include file="paginationComponent" />
+<script>
+    var router = new VueRouter({
+        routes: [
+            {
+                path: "/",
+                component: companyList
+            },
+            {
+                path: "/empinfo",
+                component: empList
+            }
+        ]
+    })
+
+    new Vue({
+        el: "#app",
+        router: router
+    })
+
+</script>
